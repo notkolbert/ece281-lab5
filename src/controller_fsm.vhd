@@ -38,8 +38,30 @@ entity controller_fsm is
 end controller_fsm;
 
 architecture FSM of controller_fsm is
-
+	signal f_Q : std_logic_vector(1 downto 0) :="10";
+    signal f_Q_next : std_logic_vector(1 downto 0) :="10";
 begin
+	f_Q_next(0) <= (not i_adv and f_Q(0)) or (i_adv and not f_Q(0)) ;
+	f_Q_next(1) <= (not i_adv and f_Q(1)) or (i_adv and not f_Q(1) and f_Q(0)) or (i_adv and f_Q(1) and not f_Q(0));
+	
+	-- Output logic
+	with f_Q select
+	o_cycle <= "0001" when "00",
+	           "0010" when "01",
+	           "0100" when "10",
+	           "1000" when others;
 
+	-------------------------------------------------------	
+	
+	-- PROCESSES ----------------------------------------	
+	-- state memory w/ asynchronous reset ---------------
+    register_proc : process (i_adv, i_reset)
+    begin
+        if i_reset = '1' then
+            f_Q <= "10";        -- reset state is yellow
+        elsif (i_adv = '1') then
+            f_Q <= f_Q_next;    -- next state becomes current state
+        end if;
+    end process register_proc;
 
 end FSM;
